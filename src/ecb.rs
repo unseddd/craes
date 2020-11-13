@@ -8,10 +8,11 @@ pub enum Error {
     InvalidLength,
 }
 
-pub fn aes_128_ecb(plaintext: &[u8], key: &[u8; aes::KEY_LEN_128]) -> Result<Vec<u8>, Error> {
+/// Encrypt a message using AES-128-ECB
+pub fn encrypt(plaintext: &[u8], key: &[u8; aes::KEY_LEN_128]) -> Result<Vec<u8>, Error> {
     let len = plaintext.len();
     if len % aes::BLOCK_LEN != 0 {
-        return Err(Error::InvalidLength)
+        return Err(Error::InvalidLength);
     }
 
     let mut res = Vec::with_capacity(len);
@@ -22,14 +23,15 @@ pub fn aes_128_ecb(plaintext: &[u8], key: &[u8; aes::KEY_LEN_128]) -> Result<Vec
     Ok(res)
 }
 
-pub fn aes_inv_128_ecb(plaintext: &[u8], key: &[u8; aes::KEY_LEN_128]) -> Result<Vec<u8>, Error> {
-    let len = plaintext.len();
+/// Decrypt a ciphertext using AES-128-ECB
+pub fn decrypt(ciphertext: &[u8], key: &[u8; aes::KEY_LEN_128]) -> Result<Vec<u8>, Error> {
+    let len = ciphertext.len();
     if len % aes::BLOCK_LEN != 0 {
-        return Err(Error::InvalidLength)
+        return Err(Error::InvalidLength);
     }
 
     let mut res = Vec::with_capacity(len);
-    for block in plaintext.chunks_exact(aes::BLOCK_LEN) {
+    for block in ciphertext.chunks_exact(aes::BLOCK_LEN) {
         res.extend_from_slice(&aes::aes_inv_128(block.try_into().unwrap(), &key)[..]);
     }
 
@@ -45,10 +47,10 @@ mod tests {
         let txt = b"This block good! This block good";
         let key = b"YELLOW SUBMARINE";
 
-        assert!(aes_128_ecb(&txt[..], &key).is_ok());
+        assert!(encrypt(&txt[..], &key).is_ok());
 
         // use an invalid length plaintext, ensure error is returned
-        assert!(aes_128_ecb(&txt[1..], &key).is_err());
+        assert!(encrypt(&txt[1..], &key).is_err());
     }
 
     #[test]
@@ -56,10 +58,10 @@ mod tests {
         let txt = b"This block good! This block good";
         let key = b"YELLOW SUBMARINE";
 
-        let cipher = aes_128_ecb(&txt[..], &key);
+        let cipher = encrypt(&txt[..], &key);
         assert!(cipher.is_ok());
 
-        let pt = aes_inv_128_ecb(&cipher.unwrap(), &key);
+        let pt = decrypt(&cipher.unwrap(), &key);
         assert!(pt.is_ok());
         assert_eq!(pt.unwrap()[..], txt[..]);
     }
