@@ -1,6 +1,13 @@
 use crate::aes;
 use alloc::vec::Vec;
 
+/// PKCS#7 padding errors
+#[derive(Debug)]
+pub enum Error {
+    InvalidLength,
+    InvalidPadding,
+}
+
 /// Pads a buffer to the next multiple of AES block-size with PKCS#7 specified bytes
 ///
 /// Examples:
@@ -26,6 +33,83 @@ pub fn pad(buf: &[u8]) -> Vec<u8> {
         1 => [buf, &[15_u8; 15]].concat(),
         0 => buf.to_vec(),
         _ => unreachable!("n mod 16 can only be in range 0..=15"),
+    }
+}
+
+/// Remove PKCS#7 padding from provided buffer
+pub fn unpad(buf: &[u8]) -> Result<Vec<u8>, Error> {
+    let buf_len = buf.len();
+
+    if buf_len < aes::BLOCK_LEN || buf_len % aes::BLOCK_LEN != 0 {
+        return Err(Error::InvalidLength);
+    }
+
+    let padded_block = &buf[buf_len - aes::BLOCK_LEN..];
+
+    if padded_block == &[16_u8; 16] {
+        Ok(Vec::new())
+    } else if &padded_block[1..] == &[15_u8; 15] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 1].to_vec())
+    } else if &padded_block[2..] == &[14_u8; 14] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 2].to_vec())
+    } else if &padded_block[3..] == &[13_u8; 13] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 3].to_vec())
+    } else if &padded_block[4..] == &[12_u8; 12] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 4].to_vec())
+    } else if &padded_block[5..] == &[11_u8; 11] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 5].to_vec())
+    } else if &padded_block[6..] == &[10_u8; 10] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 6].to_vec())
+    } else if &padded_block[7..] == &[9_u8; 9] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 7].to_vec())
+    } else if &padded_block[8..] == &[8_u8; 8] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 8].to_vec())
+    } else if &padded_block[9..] == &[7_u8; 7] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 9].to_vec())
+    } else if &padded_block[10..] == &[6_u8; 6] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 10].to_vec())
+    } else if &padded_block[11..] == &[5_u8; 5] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 11].to_vec())
+    } else if &padded_block[12..] == &[4_u8; 4] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 12].to_vec())
+    } else if &padded_block[13..] == &[3_u8; 3] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 13].to_vec())
+    } else if &padded_block[14..] == &[2_u8; 2] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 14].to_vec())
+    } else if &padded_block[15..] == &[1_u8; 1] {
+        Ok(buf[..buf_len - aes::BLOCK_LEN + 15].to_vec())
+    } else {
+        // filter any padding bytes from the final block
+        // FIXME: in the general case, what if a protocol uses PKCS#7 bytes?
+        let test_pad: Vec<u8> = padded_block
+            .iter()
+            .filter(|&&b| {
+                b != 1
+                    && b != 2
+                    && b != 3
+                    && b != 4
+                    && b != 5
+                    && b != 6
+                    && b != 7
+                    && b != 8
+                    && b != 9
+                    && b != 10
+                    && b != 11
+                    && b != 12
+                    && b != 13
+                    && b != 14
+                    && b != 15
+            })
+            .map(|&b| b)
+            .collect();
+
+        if &test_pad == &padded_block {
+            // unpadded buffer
+            Ok(buf.to_vec())
+        } else {
+            // padding block has invalid bytes
+            Err(Error::InvalidPadding)
+        }
     }
 }
 
@@ -155,5 +239,20 @@ mod tests {
         // 15 padding bytes needed to fill next block
         assert_eq!(padded.len(), 2 * aes::BLOCK_LEN);
         assert_eq!(padded[aes::BLOCK_LEN + 1..], [15_u8; 15]);
+    }
+
+    #[test]
+    fn check_unpad() {
+        let mut block = [0_u8; aes::BLOCK_LEN];
+
+        for i in 0..aes::BLOCK_LEN {
+            let last_bytes = aes::BLOCK_LEN - i - 1;
+
+            for j in last_bytes..aes::BLOCK_LEN {
+                block[j] = (i + 1) as u8;
+            }
+
+            assert_eq!(unpad(block.as_ref()).unwrap()[..], block[..last_bytes]);
+        }
     }
 }
