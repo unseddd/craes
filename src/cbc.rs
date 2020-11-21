@@ -81,13 +81,13 @@ pub fn decrypt(
 
     for (i, block) in cipher.chunks_exact(aes::BLOCK_LEN).enumerate() {
         if i == 0 {
-            // next cipher block:       AES-INV-128( block_i ^ IV , key )
+            // next plaintext block:       AES-INV-128( block_i , key ) ^ IV 
             res.extend_from_slice(&xor(
                 &aes::aes_inv_128(&block.try_into().unwrap(), key),
                 iv.as_ref(),
             )?);
         } else {
-            // next cipher block:       AES-INV-128( block_i , key ) ^ cipher_block[i-1]
+            // next plaintext block:       AES-INV-128( block_i , key ) ^ cipher_block[i-1]
             res.extend_from_slice(&xor(
                 &aes::aes_inv_128(&block.try_into().unwrap(), key),
                 &cipher[aes::BLOCK_LEN * (i - 1)..aes::BLOCK_LEN * i],
