@@ -2,11 +2,7 @@ use alloc::vec::Vec;
 use core::convert::TryInto;
 
 use crate::aes;
-
-#[derive(Debug)]
-pub enum Error {
-    InvalidLength,
-}
+use crate::Error;
 
 /// Encrypt a message using AES-128-ECB
 pub fn encrypt(plaintext: &[u8], key: &[u8; aes::KEY_LEN_128]) -> Result<Vec<u8>, Error> {

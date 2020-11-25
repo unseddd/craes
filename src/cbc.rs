@@ -1,31 +1,11 @@
 use alloc::vec::Vec;
 use core::convert::TryInto;
 
-use crate::aes;
+use crate::{aes, xor};
+use crate::Error;
 
 /// Initialization vector length for AES-128-CBC
 pub const IV_LEN: usize = 16_usize;
-
-#[derive(Debug)]
-pub enum Error {
-    InvalidLength,
-}
-
-fn xor(left: &[u8], right: &[u8]) -> Result<Vec<u8>, Error> {
-    let len = left.len();
-
-    if len != right.len() {
-        return Err(Error::InvalidLength);
-    }
-
-    let mut res = Vec::with_capacity(len);
-
-    for (el, ar) in left.iter().zip(right.iter()) {
-        res.push(el ^ ar);
-    }
-
-    Ok(res)
-}
 
 /// Encrypt a message in CBC mode
 ///
