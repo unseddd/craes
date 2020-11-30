@@ -2,11 +2,11 @@ use alloc::vec::Vec;
 
 use crate::{aes, xor};
 
-// Nonce length for key stream input
-const NONCE_LEN: usize = 8;
+/// Nonce length for key stream input
+pub const NONCE_LEN: usize = 8;
 
-// Counter length for key stream input
-const COUNT_LEN: usize = 8;
+/// Counter length for key stream input
+pub const COUNT_LEN: usize = 8;
 
 /// Endianess for interpreting nonce and counter values
 #[derive(Debug, PartialEq)]
@@ -71,9 +71,9 @@ fn ctr_inner(
     res
 }
 
-// Get the next block of the keystream
+/// Get the next block of the keystream
 // NOTE: separated into own function to help debugging
-fn ctr_inner_cipher(
+pub fn ctr_inner_cipher(
     input: &mut [u8; aes::BLOCK_LEN],
     key: &[u8; aes::KEY_LEN_128],
     count: u64,
